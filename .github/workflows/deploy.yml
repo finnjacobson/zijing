@@ -1,0 +1,72 @@
+# Build the data shards and the app, then publish to GitHub Pages.
+# Repo settings → Pages → Source: "GitHub Actions".
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Weekly rebuild so CC-CEDICT updates reach the app (cached shards refresh in the background).
+  schedule:
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # the data scripts import TypeScript directly (Node type stripping)
+          cache: npm
+
+      - run: npm ci
+
+      # Raw downloads (~60 MB + the Commons index) are reused for a week, then refetched.
+      - name: Week number
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: data-raw
+          key: data-raw-${{ steps.week.outputs.week }}
+
+      - name: Build data shards
+        run: npm run data
+
+      # Project sites live at https://<user>.github.io/<repo>/. For a custom domain or a
+      # <user>.github.io repository, set the repository variable PAGES_BASE to "/".
+      - name: Build app
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          BASE="${{ vars.PAGES_BASE }}"
+          if [ -z "$BASE" ]; then
+            case "$REPO" in *.github.io) BASE=/ ;; *) BASE="/$REPO/" ;; esac
+          fi
+          echo "Base path: $BASE"
+          npm run build -- --base="$BASE"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

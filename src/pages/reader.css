@@ -1,0 +1,223 @@
+.reader-intro {
+  padding: 34px 0 18px;
+}
+.reader-intro h1 {
+  font-size: 2rem;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.reader-intro h1 .kai {
+  color: var(--zhu);
+  font-size: 1.3em;
+}
+.reader-intro p {
+  margin: 6px 0 0;
+}
+.input-panel textarea {
+  font-size: 1.25rem;
+  min-height: 9em;
+}
+.input-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.samples {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.samples .btn {
+  padding: 3px 8px;
+  font-size: 0.85rem;
+}
+.input-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.reader-toolbar {
+  display: flex;
+  gap: 12px 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.reader-toolbar .counts {
+  margin-left: auto;
+}
+.legend {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: -4px 0 12px;
+}
+.legend .ch {
+  padding: 0 3px;
+  border-radius: 3px;
+  margin-left: 8px;
+}
+
+.reader-out {
+  font-size: clamp(1.6rem, 4.2vw, 2.15rem);
+  line-height: 2;
+  letter-spacing: 0.04em;
+}
+.reader-out.with-pinyin {
+  line-height: 2.5;
+}
+.text-flow {
+  white-space: pre-wrap;
+  line-break: strict;
+}
+/* A segmented word: a faint underline groups its characters. */
+.w {
+  position: relative;
+  border-radius: 4px;
+  transition: background 0.45s var(--ease-ink);
+  padding-bottom: 2px;
+  background-image: linear-gradient(to right, transparent 8%, rgba(239, 230, 214, 0.16) 8%, rgba(239, 230, 214, 0.16) 92%, transparent 92%);
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+}
+.w:hover,
+.w.active {
+  background-color: rgba(239, 230, 214, 0.06);
+  background-image: linear-gradient(to right, transparent 4%, var(--zhu) 4%, var(--zhu) 96%, transparent 96%);
+}
+.nobr {
+  white-space: nowrap;
+}
+.ch {
+  border-radius: 3px;
+  transition: color 0.45s var(--ease-ink), background 0.45s var(--ease-ink), text-shadow 0.45s var(--ease-ink);
+}
+.ch:hover {
+  color: #fff;
+  text-shadow: 0 0 14px rgba(232, 88, 63, 0.55);
+}
+ruby rt {
+  font-family: var(--f-latin);
+  font-size: 0.42em;
+  letter-spacing: 0;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* Mastery tints */
+.ch.m-none {
+  color: var(--paper-dim);
+}
+.ch.m-low {
+  background: rgba(208, 67, 45, 0.28);
+}
+.ch.m-mid {
+  background: rgba(201, 164, 92, 0.26);
+}
+.ch.m-high {
+  background: rgba(120, 166, 142, 0.3);
+}
+
+/* Vocab table */
+.vocab {
+  width: 100%;
+  border-collapse: collapse;
+}
+.vocab td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: baseline;
+}
+.vocab tr:last-child td {
+  border-bottom: none;
+}
+.vocab-word {
+  white-space: nowrap;
+}
+.vocab-py {
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.vocab-def {
+  font-size: 1rem;
+  letter-spacing: 0;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+@media (max-width: 560px) {
+  .vocab tr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .vocab td {
+    border: none;
+    padding: 2px 8px;
+  }
+  .vocab-def {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Word card (hover tooltip / touch card) */
+.word-card {
+  position: fixed;
+  z-index: 60;
+  max-width: min(360px, calc(100vw - 24px));
+  background: rgba(24, 22, 19, 0.97);
+  border: 1px solid var(--line-strong);
+  border-top: 2px solid var(--zhu);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+  transition: opacity 0.35s var(--ease-ink);
+  font-size: 0.98rem;
+}
+@media (hover: hover) {
+  .word-card {
+    pointer-events: none;
+  }
+}
+.wc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.wc-word {
+  font-size: 1.6rem;
+  font-family: var(--f-kai);
+}
+.wc-reading {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+.wc-reading + .wc-reading {
+  border-top: 1px solid var(--line);
+}
+.wc-reading .pinyin {
+  font-size: 1.1rem;
+}
+.wc-gloss {
+  color: var(--paper-dim);
+}
+.wc-chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.wc-chars .btn {
+  font-size: 1.2rem;
+}
