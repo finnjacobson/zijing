@@ -128,18 +128,26 @@ const ipad = await (await wk.newContext({ ...devices['iPad Pro 11'] })).newPage(
 ipad.on('pageerror', (e) => errors.push(e.message));
 await openSheet(ipad, '馬');
 // Synthetic pointer events: a Pencil stroke, then a "palm" touch that must be ignored.
-const fire = (loc, type, pts) =>
+let nextId = 10;
+const fire = (loc, type, pts, { up = true, id = nextId++ } = {}) =>
   loc.evaluate(
-    (el, { type, pts }) => {
+    (el, { type, pts, up, id }) => {
       const r = el.getBoundingClientRect();
       const ev = (name, [x, y], pressure) =>
-        el.dispatchEvent(new PointerEvent(name, { bubbles: true, cancelable: true, pointerId: type === 'pen' ? 7 : 8, pointerType: type, isPrimary: true, pressure, clientX: r.left + x * r.width, clientY: r.top + y * r.height, button: 0, buttons: 1 }));
+        el.dispatchEvent(new PointerEvent(name, { bubbles: true, cancelable: true, pointerId: id, pointerType: type, isPrimary: true, pressure, clientX: r.left + x * r.width, clientY: r.top + y * r.height, button: 0, buttons: 1 }));
       ev('pointerdown', pts[0], 0.3);
       pts.slice(1).forEach((p, i) => ev('pointermove', p, 0.3 + (0.6 * i) / pts.length));
-      ev('pointerup', pts.at(-1), 0);
+      if (up) ev('pointerup', pts.at(-1), 0);
     },
-    { type, pts },
+    { type, pts, up, id },
   );
+/** Dispatch a cancelable event on the element and report whether the page cancelled it. */
+const cancelled = (loc, type) =>
+  loc.evaluate((el, type) => {
+    const e = new Event(type, { bubbles: true, cancelable: true });
+    el.dispatchEvent(e);
+    return e.defaultPrevented;
+  }, type);
 const sq = square(ipad, 1, 2);
 await fire(sq, 'pen', [[0.2, 0.5], [0.5, 0.5], [0.8, 0.52]]);
 await ipad.waitForTimeout(200);
@@ -152,6 +160,32 @@ await ipad.getByLabel('Draw with finger too').check();
 await fire(square(ipad, 1, 3), 'touch', [[0.2, 0.2], [0.8, 0.8]]);
 await ipad.waitForTimeout(200);
 check((await inkCount(square(ipad, 1, 3))) === 1, 'finger draws again when re-enabled');
+
+// The reported bug: after the first Pencil stroke, later strokes were swallowed by Safari's
+// text-selection gesture. Several strokes in a row, same and different squares, must all land.
+await ipad.getByLabel('Draw with finger too').uncheck();
+const s14 = square(ipad, 1, 4);
+for (const y of [0.25, 0.45, 0.65]) await fire(s14, 'pen', [[0.2, y], [0.5, y + 0.02], [0.8, y]]);
+await fire(square(ipad, 1, 5), 'pen', [[0.5, 0.2], [0.5, 0.8]]);
+await fire(square(ipad, 2, 2), 'pen', [[0.2, 0.2], [0.8, 0.8]]);
+await ipad.waitForTimeout(200);
+check((await inkCount(s14)) === 3 && (await inkCount(square(ipad, 1, 5))) === 1 && (await inkCount(square(ipad, 2, 2))) === 1, 'five Pencil strokes in a row all appear (3 in one square, 2 elsewhere)');
+
+// A stroke whose end never reaches the page (Safari cancelled it) must not block the next one.
+const s16 = square(ipad, 1, 6);
+await fire(s16, 'pen', [[0.2, 0.3], [0.8, 0.3]], { up: false });
+await fire(s16, 'pen', [[0.2, 0.7], [0.8, 0.7]]);
+await ipad.waitForTimeout(200);
+check((await inkCount(s16)) === 2, 'a stroke with a lost ending is kept and the next stroke still draws');
+
+// Safari's own gestures are cancelled over writing squares (not over the model squares).
+const touchBlocked = (await cancelled(s14, 'touchstart')) && (await cancelled(s14, 'touchmove'));
+check(touchBlocked, 'touchstart/touchmove on a writing square are cancelled (no Pencil text selection, magnifier or scroll)');
+check(await cancelled(s14, 'selectstart'), 'text selection cannot start on a writing square');
+check(!(await cancelled(square(ipad, 1, 1), 'touchstart')), 'model squares are left alone');
+const selectable = await ipad.locator('.tianzige p').first().evaluate((e) => getComputedStyle(e).webkitUserSelect || getComputedStyle(e).userSelect);
+check(selectable === 'none', 'text around the sheet is not selectable (was: "Apple" got highlighted)');
+
 check(await ipad.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal overflow on iPad');
 await ipad.locator('#sheet').screenshot({ path: OUT + 'sheet-ipad.png' });
 await wk.close();

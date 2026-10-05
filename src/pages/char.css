@@ -1072,6 +1072,12 @@ details summary {
 }
 
 /* ------------------------------------------------------------- 田字格 practice sheet */
+/* Nothing here should ever be selected by a stray Pencil drag or a resting palm. */
+.tianzige {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .tzg-help {
   margin: 0 0 12px;
 }

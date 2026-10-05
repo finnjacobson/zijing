@@ -104,7 +104,13 @@ const Square = memo(function Square({ index, strokes, focused, label, describedB
     if (e.pointerType === 'pen') onPenSeen();
     // Palm rejection: once a Pencil has been used, resting fingers don't draw.
     if (e.pointerType === 'touch' && !acceptTouch) return;
-    if (drawing.current) return;
+    // A stroke whose pointerup/cancel never arrived must not block the next one: keep what was drawn.
+    const stale = drawing.current;
+    if (stale && stale.id !== e.pointerId) {
+      cancelAnimationFrame(stale.frame);
+      drawing.current = null;
+      if (stale.stroke.pts.length > 1) onCommit(index, stale.stroke);
+    } else if (stale) return;
     e.preventDefault();
     try {
       e.currentTarget.setPointerCapture(e.pointerId); // keep the stroke even if it wanders outside the square
@@ -153,6 +159,7 @@ const Square = memo(function Square({ index, strokes, focused, label, describedB
       onPointerMove={onPointerMove}
       onPointerUp={finish}
       onPointerCancel={finish}
+      onLostPointerCapture={finish}
       onFocus={() => onFocusSquare(index)}
       onKeyDown={(e) => onKey(e, index)}
     >
@@ -176,6 +183,9 @@ export function Tianzige({ shard }: { shard: CharShard }) {
   // Opening any character page (including switching 學 ⇄ 学) starts a fresh sheet.
   const key = refs[0].char;
   const [cells, setCells] = useState<Record<number, InkStroke[]>>({});
+  // Source of truth updated synchronously, so two changes in the same tick (e.g. a rescued stroke and
+  // the new one) never overwrite each other; React state follows for rendering.
+  const cellsRef = useRef<Record<number, InkStroke[]>>({});
   const [focus, setFocus] = useState(1);
   const [announce, setAnnounce] = useState('');
   const [penSeen, setPenSeen] = useState(false);
@@ -183,15 +193,34 @@ export function Tianzige({ shard }: { shard: CharShard }) {
   const undoStack = useRef<Undo[]>([]);
   const [undoCount, setUndoCount] = useState(0);
   const squares = useRef(new Map<number, HTMLDivElement>());
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  // On iPad, dragging the Apple Pencil (or a palm) starts Safari's text-selection / scroll gestures,
+  // which cancel the stroke and select nearby text. Pointer events and touch-action can't stop that;
+  // cancelling the touch itself can. React only attaches passive touch listeners, so this is native.
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    const block = (e: Event) => {
+      if ((e.target as Element | null)?.closest?.('.tzg-square.writable')) e.preventDefault();
+    };
+    const opts = { passive: false } as const;
+    for (const t of ['touchstart', 'touchmove', 'selectstart', 'contextmenu']) el.addEventListener(t, block, opts);
+    return () => {
+      for (const t of ['touchstart', 'touchmove', 'selectstart', 'contextmenu']) el.removeEventListener(t, block);
+    };
+  }, []);
   const uid = useId().replace(/:/g, '');
 
   useEffect(() => {
+    cellsRef.current = {};
     setCells({});
     undoStack.current = [];
     setUndoCount(0);
   }, [key]);
 
   const update = useCallback((next: Record<number, InkStroke[]>, undo: Undo | null, message?: string) => {
+    cellsRef.current = next;
     setCells(next);
     if (undo) {
       undoStack.current.push(undo);
@@ -201,8 +230,6 @@ export function Tianzige({ shard }: { shard: CharShard }) {
     if (message) setAnnounce(message);
   }, []);
 
-  const cellsRef = useRef(cells);
-  cellsRef.current = cells;
 
   const commit = useCallback(
     (index: number, stroke: InkStroke) => {
@@ -213,13 +240,13 @@ export function Tianzige({ shard }: { shard: CharShard }) {
   );
 
   const clearSquare = (index: number) => {
-    const before = cells[index] ?? [];
+    const before = cellsRef.current[index] ?? [];
     if (!before.length) return;
     const { row, col } = position(index);
-    update({ ...cells, [index]: [] }, { index, before }, `Cleared row ${row}, column ${col}. Undo is available.`);
+    update({ ...cellsRef.current, [index]: [] }, { index, before }, `Cleared row ${row}, column ${col}. Undo is available.`);
   };
 
-  const resetSheet = () => update({}, { all: cells }, 'Sheet reset. Undo is available.');
+  const resetSheet = () => update({}, { all: cellsRef.current }, 'Sheet reset. Undo is available.');
 
   const undo = () => {
     const u = undoStack.current.pop();
@@ -228,7 +255,7 @@ export function Tianzige({ shard }: { shard: CharShard }) {
     if ('all' in u) update(u.all, null, 'Sheet restored.');
     else {
       const { row, col } = position(u.index);
-      update({ ...cells, [u.index]: u.before }, null, `Undid the last change in row ${row}, column ${col}.`);
+      update({ ...cellsRef.current, [u.index]: u.before }, null, `Undid the last change in row ${row}, column ${col}.`);
     }
   };
 
@@ -316,7 +343,7 @@ export function Tianzige({ shard }: { shard: CharShard }) {
       </div>
 
       <div className="tzg-scroll">
-        <div className="tzg-sheet" role="grid" aria-label={`田字格 practice sheet for ${refs.map((r) => r.char).join(' / ')}`} aria-describedby={helpId} aria-rowcount={ROWS} aria-colcount={COLS}>
+        <div ref={sheetRef} className="tzg-sheet" role="grid" aria-label={`田字格 practice sheet for ${refs.map((r) => r.char).join(' / ')}`} aria-describedby={helpId} aria-rowcount={ROWS} aria-colcount={COLS}>
           {Array.from({ length: ROWS }, (_, r) => (
             <div key={r} role="row" className="tzg-row" aria-rowindex={r + 1}>
               {Array.from({ length: COLS }, (_, c) => {
