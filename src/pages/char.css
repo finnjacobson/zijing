@@ -1070,3 +1070,117 @@ details summary {
   color: var(--paper);
   background: var(--zhu-soft);
 }
+
+/* ------------------------------------------------------------- 田字格 practice sheet */
+.tzg-help {
+  margin: 0 0 12px;
+}
+.tzg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.tzg-status {
+  margin-left: auto;
+}
+.tzg-scroll {
+  overflow-x: auto;
+  padding: 2px; /* room for focus outlines */
+}
+/* Contiguous squares like a printed workbook: the sheet draws the outer frame, each square its right/bottom edge. */
+.tzg-sheet {
+  --tzg-line: rgba(208, 67, 45, 0.55);
+  --tzg-guide: rgba(208, 67, 45, 0.3);
+  width: 100%;
+  max-width: 780px;
+  min-width: 330px;
+  border-top: 1.5px solid var(--tzg-line);
+  border-left: 1.5px solid var(--tzg-line);
+  background: rgba(239, 230, 214, 0.025);
+}
+.tzg-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+.tzg-square {
+  position: relative;
+  aspect-ratio: 1;
+  border-right: 1.5px solid var(--tzg-line);
+  border-bottom: 1.5px solid var(--tzg-line);
+  outline: none;
+  color: var(--paper);
+}
+.tzg-square svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.tzg-guides line {
+  stroke: var(--tzg-guide);
+  stroke-width: 1;
+  stroke-dasharray: 4 3.5;
+  vector-effect: non-scaling-stroke;
+}
+.tzg-square.writable {
+  cursor: crosshair;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.tzg-square .ink {
+  fill: currentColor;
+}
+.tzg-square .ink.live {
+  opacity: 0.92;
+}
+.tzg-square:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--zhu-bright);
+  background: rgba(208, 67, 45, 0.06);
+}
+.tzg-square.reference {
+  background: rgba(239, 230, 214, 0.06);
+}
+.tzg-model {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: min(5.6rem, 11vw);
+  line-height: 1;
+  color: var(--paper);
+  padding-bottom: 4%;
+}
+.tzg-tag {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  font-family: var(--f-kai);
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--paper);
+  background: var(--zhu);
+}
+/* Windows high-contrast / forced colours: keep ink and grid visible */
+@media (forced-colors: active) {
+  .tzg-sheet,
+  .tzg-square {
+    border-color: CanvasText;
+    --tzg-guide: GrayText;
+  }
+  .tzg-square .ink,
+  .tzg-model {
+    fill: CanvasText;
+    color: CanvasText;
+  }
+  .tzg-square:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+}

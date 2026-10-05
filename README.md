@@ -2,7 +2,8 @@
 
 A character-first Chinese reader. Paste text or a vocabulary list; every character opens a study page
 with stroke-order animation, readings in six systems and five languages, meanings by reading, common words,
-an IDS decomposition tree, its phonetic series, ancient forms, calligraphy styles and handwriting practice.
+an IDS decomposition tree, its phonetic series, ancient forms, calligraphy styles, handwriting practice
+and a free-writing 田字格 practice sheet (on screen only; fresh each visit, with undo and reset).
 
 Fully client-side (Vite + React + TypeScript). Progress is stored in IndexedDB and never leaves the browser.
 
@@ -53,6 +54,7 @@ With a dev or preview server running on port 5199 (`npx vite --port 5199`):
 ```sh
 node tests/smoke.mjs            # all: reader, character pages, practice/progress/backup
 node tests/smoke.mjs reader     # or one group
+node tests/sheet.mjs            # 田字格 sheet: drawing, reset/undo, keyboard, axe audit, Pencil palm rejection
 BASE=http://localhost:5299 node tests/smoke.mjs   # against `vite preview --port 5299`
 ```
 

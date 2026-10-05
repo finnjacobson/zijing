@@ -17,6 +17,7 @@
     "hanzi-writer": "^3.7.3",
     "idb-keyval": "^6.3.0",
     "opencc-js": "^1.4.2",
+    "perfect-freehand": "^1.2.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"
@@ -28,6 +29,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "adm-zip": "^0.6.1",
+    "axe-core": "^4.13.0",
     "hanzi-writer-data": "^2.0.1",
     "oxlint": "^1.81.0",
     "pinyin-to-zhuyin": "^1.1.0",

@@ -14,6 +14,7 @@ import { Pinyin } from '../components/Pinyin';
 import { DecompTree } from '../components/DecompTree';
 import { PhoneticSeries } from '../components/PhoneticSeries';
 import { Practice } from '../components/Practice';
+import { Tianzige } from '../components/Tianzige';
 import { Seal } from '../components/Seal';
 import { Etymology } from '../components/Etymology';
 import { Calligraphy } from '../components/Calligraphy';
@@ -43,6 +44,7 @@ const SECTIONS = [
   ['meanings', '字義', 'Meanings'],
   ['words', '詞語', 'Words'],
   ['practice', '習字', 'Practice'],
+  ['sheet', '田字格', 'Sheet'],
   ['structure', '構字', 'Structure'],
   ['series', '聲系', 'Sound series'],
   ['evolution', '字源', 'Evolution'],
@@ -300,6 +302,10 @@ export default function CharPage() {
         ) : (
           <div className="loading">…</div>
         )}
+      </Section>
+
+      <Section id="sheet" zh="田字格" title="Practice sheet">
+        <Tianzige shard={shard} />
       </Section>
 
       <Section id="structure" zh="構字" title="Decomposition">
