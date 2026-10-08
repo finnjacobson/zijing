@@ -38,18 +38,19 @@ const position = (i: number) => ({ row: Math.floor(i / COLS) + 1, col: (i % COLS
 
 // ------------------------------------------------------------------ ink rendering
 function outlinePath(stroke: InkStroke): string {
+  // An even pen line (no pressure, speed or taper effects), thin enough for many-stroke characters.
   const outline = getStroke(stroke.pts, {
-    size: 6.5,
-    thinning: 0.62,
-    smoothing: 0.55,
-    streamline: 0.4,
-    simulatePressure: !stroke.pen,
+    size: 3.6,
+    thinning: 0,
+    smoothing: 0.5,
+    streamline: 0.35,
+    simulatePressure: false,
     start: { taper: 0, cap: true },
-    end: { taper: stroke.pen ? 0 : 6, cap: true },
+    end: { taper: 0, cap: true },
     last: true,
   });
   if (outline.length < 2) return '';
-  // Quadratic curves through the midpoints give a smooth brush edge.
+  // Quadratic curves through the midpoints give a smooth edge.
   let d = `M${outline[0][0].toFixed(2)},${outline[0][1].toFixed(2)} Q`;
   for (let i = 0; i < outline.length; i++) {
     const [x0, y0] = outline[i];
